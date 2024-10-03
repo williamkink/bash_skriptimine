@@ -1,0 +1,45 @@
+#!/bin/bash
+# Kasutaja lisamise skript
+# Kasutajanimi tuleb anda skripti parameetrina
+# Skript peab antud nimega kasutajat lisama süsteemi 
+# ning looma kasutajale vastava isikliku kodukataloogi 
+# ja pakkuma sobilikku koorikut
+
+# Kontrollime, kas kasutajanimi on antud
+if [ $# -ne 1 ]; then
+    echo "Kasutajanimi puudub: $0 kasutajanimi"
+    exit 1
+fi
+
+# Määrame kasutajanime muutujasse
+kasutajanimi=$1
+
+# Kasutaja lisamine koos vajalike valikutega (-m kodukataloogi jaoks, -s määrab kooriku)
+useradd -m -s /bin/bash $kasutajanimi
+
+# Kontrollime, kas kasutaja lisamine õnnestus
+if [ $? -eq 0 ]; then
+    echo "Kasutaja $kasutajanimi on edukalt lisatud."
+else
+    echo "Probleem kasutaja $kasutajanimi lisamisega."
+    exit 2
+fi
+
+# Kontrollime, kas kasutaja on lisatud passwd-faili
+grep $kasutajanimi /etc/passwd
+if [ $? -eq 0 ]; then
+    echo "Kasutaja $kasutajanimi on lisatud /etc/passwd faili."
+else
+    echo "Kasutajat $kasutajanimi ei leitud /etc/passwd failist."
+    exit 3
+fi
+
+# Kontrollime kodukataloogi olemasolu
+if [ -d "/home/$kasutajanimi" ]; then
+    echo "Kasutaja $kasutajanimi kodukataloog on loodud."
+else
+    echo "Probleem kodukataloogi loomisega."
+    exit 4
+fi
+
+echo "Kasutaja loomine edukalt lõpetatud!"
