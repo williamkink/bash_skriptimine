@@ -1,0 +1,72 @@
+#!/bin/bash
+
+# Kontrolli, kas kasutaja on root
+if [[ $EUID -ne 0 ]]; then
+  echo "Seda skripti tuleb käivitada root kasutajana!"
+  exit 1
+fi
+
+# Funktsioon, mis kontrollib Linuxi kasutajanime kehtivust
+function valid_username() {
+  if [[ "$1" =~ ^[a-z_][a-z0-9_-]{0,31}$ ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+# Põhisilmus
+while true; do
+  echo "Sisesta kasutaja nimi või vajuta 'x' lõpetamiseks:"
+  read username
+
+  # Kui kasutaja sisestab 'x', siis lõpetab töö
+  if [[ "$username" == "x" ]]; then
+    echo "Lõpetamine..."
+    exit 0
+  fi
+
+  # Kontrollib kasutajanime sobivust
+  if ! valid_username "$username"; then
+    echo "Vigane kasutajanimi. Palun sisesta uuesti."
+    continue
+  fi
+
+  # Kontrollib, kas kasutaja juba eksisteerib
+  if id "$username" &>/dev/null; then
+    echo "Kasutaja '$username' juba eksisteerib. Palun vali teine nimi."
+    continue
+  fi
+
+  # Küsib grupi nime
+  echo "Sisesta grupi nimi ('opilased' või 'opetajad'):"
+  read group
+
+  # Kontrollib grupi nime kehtivust
+  if [[ "$group" != "opilased" && "$group" != "opetajad" ]]; then
+    echo "Vigane grupi nimi. Palun sisesta 'opilased' või 'opetajad'."
+    continue
+  fi
+
+  # Loob kasutaja ja määrab kooriku, kodukataloogi ning grupi
+  useradd -m -d "/home/$username" -s /bin/bash -g "$group" "$username"
+  
+  # Määrab kasutajale parooli
+  echo "Sisesta kasutajale '$username' parool:"
+  passwd "$username"
+
+  # Määrab kodukataloogi õigused
+  chown "$username:$group" "/home/$username"
+  chmod 755 "/home/$username"
+
+  # Väljasta loodud kasutaja andmed
+  echo "Kasutaja loomine õnnestus!"
+  echo "Kasutaja nimi: $username"
+  echo "Grupp: $group"
+  echo "Kodukataloog: /home/$username"
+  echo "Koorik: /bin/bash"
+  echo "Kodukataloogi õigused: 755"
+  echo "---------------------------------------"
+
+done
+
